@@ -2,31 +2,20 @@
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
-# 1. Define your list of applications here!
-# You can find IDs by opening powershell and typing: winget search "App Name"
+# 1. Define your list of applications here
 $AppList = @(
     [pscustomobject]@{ Category = "Archivator"; Name = "NanaZip"; Id = "M2Team.NanaZip" }
-
     [pscustomobject]@{ Category = "Audio Redactors/DAW"; Name = "VCV Rack"; Id = "VCVRack.VCVRack" }
-            
     [pscustomobject]@{ Category = "Browser"; Name = "Mozilla Firefox"; Id = "Mozilla.Firefox" }
-    
     [pscustomobject]@{ Category = "Graphic Redactors"; Name = "Affinity Studio"; Id = "Canva.Affinity" }
     [pscustomobject]@{ Category = "Graphic Redactors"; Name = "GIMP"; Id = "GIMP.GIMP.3" }
-    
-    [pscustomobject]@{ Category = "3D Redactors"; Name = "Blender"; Id = "Microsoft.VisualStudioCode" }
-    
+    [pscustomobject]@{ Category = "3D Redactors"; Name = "Blender"; Id = "BlenderFoundation.Blender" }
     [pscustomobject]@{ Category = "Development"; Name = "Git"; Id = "Git.Git" }
     [pscustomobject]@{ Category = "Development"; Name = "Python 3"; Id = "Python.Python.3.11" }
-
     [pscustomobject]@{ Category = "Multimedia"; Name = "qView"; Id = "jurplel.qView" }
-    
     [pscustomobject]@{ Category = "Office Suite"; Name = "OnlyOffice"; Id = "ONLYOFFICE.DesktopEditors" }
-
     [pscustomobject]@{ Category = "Screen Capture"; Name = "OBS Studio"; Id = "OBSProject.OBSStudio" }
-
     [pscustomobject]@{ Category = "Text Editor"; Name = "Sublime Text"; Id = "SublimeHQ.SublimeText.4" }
-
     [pscustomobject]@{ Category = "Utilities"; Name = "BleachBit"; Id = "BleachBit.BleachBit" }
     [pscustomobject]@{ Category = "Utilities"; Name = "Everything"; Id = "voidtools.Everything" }
     [pscustomobject]@{ Category = "Utilities"; Name = "KeePassXC"; Id = "KeePassXCTeam.KeePassXC" }
@@ -35,18 +24,25 @@ $AppList = @(
     [pscustomobject]@{ Category = "Utilities"; Name = "qBittorrent"; Id = "qBittorrent.qBittorrent" }
 )
 
+# --- DARK MODE COLORS ---
+$BgColor      = [System.Drawing.Color]::FromArgb(32, 32, 32)   # Dark Gray
+$ListBgColor  = [System.Drawing.Color]::FromArgb(45, 45, 48)   # Slightly lighter Dark Gray
+$TextColor    = [System.Drawing.Color]::White
+
 # 2. Setup the GUI Window
 $Form = New-Object System.Windows.Forms.Form
-$Form.Text = "App List"
-$Form.Size = New-Object System.Drawing.Size(450, 550)
+$Form.Text = "My Custom App Utility"
+$Form.Size = New-Object System.Drawing.Size(450, 610) 
 $Form.StartPosition = "CenterScreen"
 $Form.FormBorderStyle = 'FixedDialog'
 $Form.MaximizeBox = $false
 $Form.Font = New-Object System.Drawing.Font("Segoe UI", 10)
+$Form.BackColor = $BgColor     # Apply Dark Mode
+$Form.ForeColor = $TextColor   # Apply Dark Mode
 
 # Add Title Label
 $Label = New-Object System.Windows.Forms.Label
-$Label.Text = "Select the applications you want to install:"
+$Label.Text = "Select the applications you want to manage:"
 $Label.Location = New-Object System.Drawing.Point(20, 20)
 $Label.Size = New-Object System.Drawing.Size(400, 25)
 $Form.Controls.Add($Label)
@@ -54,61 +50,141 @@ $Form.Controls.Add($Label)
 # Add Checked List Box for Apps
 $CheckedListBox = New-Object System.Windows.Forms.CheckedListBox
 $CheckedListBox.Location = New-Object System.Drawing.Point(20, 50)
-$CheckedListBox.Size = New-Object System.Drawing.Size(390, 380)
+$CheckedListBox.Size = New-Object System.Drawing.Size(395, 370)
 $CheckedListBox.CheckOnClick = $true
+$CheckedListBox.BackColor = $ListBgColor   # Apply Dark Mode
+$CheckedListBox.ForeColor = $TextColor     # Apply Dark Mode
+$CheckedListBox.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
 
-# Populate the list box with our apps
+# Populate the list box
 foreach ($App in $AppList) {
-    # Display format: [Category] App Name
     $DisplayString = "[$($App.Category)] $($App.Name)"
     $CheckedListBox.Items.Add($DisplayString) | Out-Null
 }
 $Form.Controls.Add($CheckedListBox)
 
-# Add Install Button
+
+# ==========================================
+# BUTTON 1: INSTALL SELECTED
+# ==========================================
 $InstallButton = New-Object System.Windows.Forms.Button
 $InstallButton.Text = "Install Selected"
-$InstallButton.Location = New-Object System.Drawing.Point(20, 450)
-$InstallButton.Size = New-Object System.Drawing.Size(150, 35)
-$InstallButton.BackColor = [System.Drawing.Color]::LightGreen
-
-# Define what happens when "Install" is clicked
+$InstallButton.Location = New-Object System.Drawing.Point(20, 430)
+$InstallButton.Size = New-Object System.Drawing.Size(190, 35)
+$InstallButton.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
+$InstallButton.BackColor = [System.Drawing.Color]::SeaGreen
+$InstallButton.ForeColor = [System.Drawing.Color]::White
 $InstallButton.Add_Click({
-    $Form.Hide() # Hide window while installing
-    Write-Host "======================================" -ForegroundColor Cyan
-    Write-Host " Starting Installation Process..." -ForegroundColor Cyan
-    Write-Host "======================================" -ForegroundColor Cyan
-
+    $Form.Hide()
+    Write-Host "`n=== Starting Installation ===" -ForegroundColor Cyan
     foreach ($Item in $CheckedListBox.CheckedItems) {
-        # Match the checked string back to the object
         $App = $AppList | Where-Object { "[$($_.Category)] $($_.Name)" -eq $Item }
-        
         if ($App) {
-            Write-Host "`n>>> Installing $($App.Name)..." -ForegroundColor Yellow
-            
-            # Winget command to silently install the app
+            Write-Host ">>> Installing $($App.Name)..." -ForegroundColor Yellow
             $wingetArgs = @("install", "--id", $App.Id, "--exact", "--silent", "--accept-package-agreements", "--accept-source-agreements")
             & winget $wingetArgs
-            
-            if ($LastExitCode -eq 0) {
-                Write-Host "[SUCCESS] $($App.Name) installed successfully!" -ForegroundColor Green
-            } else {
-                Write-Host "[FAILED] Failed to install $($App.Name). Exit code: $LastExitCode" -ForegroundColor Red
-            }
+            if ($LastExitCode -eq 0) { Write-Host "[SUCCESS] Installed!" -ForegroundColor Green } 
+            else { Write-Host "[FAILED] Exit code: $LastExitCode" -ForegroundColor Red }
         }
     }
-    Write-Host "`n======================================" -ForegroundColor Cyan
-    Write-Host " All installations have completed!" -ForegroundColor Cyan
-    Write-Host "======================================" -ForegroundColor Cyan
+    Write-Host "=== Process Complete ===" -ForegroundColor Cyan
     $Form.Close()
 })
 $Form.Controls.Add($InstallButton)
 
-# Add Cancel Button
+
+# ==========================================
+# BUTTON 2: UNINSTALL SELECTED
+# ==========================================
+$UninstallButton = New-Object System.Windows.Forms.Button
+$UninstallButton.Text = "Uninstall Selected"
+$UninstallButton.Location = New-Object System.Drawing.Point(225, 430)
+$UninstallButton.Size = New-Object System.Drawing.Size(190, 35)
+$UninstallButton.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
+$UninstallButton.BackColor = [System.Drawing.Color]::IndianRed
+$UninstallButton.ForeColor = [System.Drawing.Color]::White
+$UninstallButton.Add_Click({
+    $Form.Hide()
+    Write-Host "`n=== Starting Uninstallation ===" -ForegroundColor Cyan
+    foreach ($Item in $CheckedListBox.CheckedItems) {
+        $App = $AppList | Where-Object { "[$($_.Category)] $($_.Name)" -eq $Item }
+        if ($App) {
+            Write-Host ">>> Uninstalling $($App.Name)..." -ForegroundColor Yellow
+            $wingetArgs = @("uninstall", "--id", $App.Id, "--exact", "--silent")
+            & winget $wingetArgs
+            if ($LastExitCode -eq 0) { Write-Host "[SUCCESS] Uninstalled!" -ForegroundColor Green } 
+            else { Write-Host "[FAILED] Exit code: $LastExitCode" -ForegroundColor Red }
+        }
+    }
+    Write-Host "=== Process Complete ===" -ForegroundColor Cyan
+    $Form.Close()
+})
+$Form.Controls.Add($UninstallButton)
+
+
+# ==========================================
+# BUTTON 3: UPGRADE SELECTED
+# ==========================================
+$UpgradeSelectedButton = New-Object System.Windows.Forms.Button
+$UpgradeSelectedButton.Text = "Upgrade Selected"
+$UpgradeSelectedButton.Location = New-Object System.Drawing.Point(20, 475)
+$UpgradeSelectedButton.Size = New-Object System.Drawing.Size(190, 35)
+$UpgradeSelectedButton.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
+$UpgradeSelectedButton.BackColor = [System.Drawing.Color]::SteelBlue
+$UpgradeSelectedButton.ForeColor = [System.Drawing.Color]::White
+$UpgradeSelectedButton.Add_Click({
+    $Form.Hide()
+    Write-Host "`n=== Upgrading Selected Apps ===" -ForegroundColor Cyan
+    foreach ($Item in $CheckedListBox.CheckedItems) {
+        $App = $AppList | Where-Object { "[$($_.Category)] $($_.Name)" -eq $Item }
+        if ($App) {
+            Write-Host ">>> Upgrading $($App.Name)..." -ForegroundColor Yellow
+            $wingetArgs = @("upgrade", "--id", $App.Id, "--exact", "--silent", "--accept-package-agreements", "--accept-source-agreements")
+            & winget $wingetArgs
+            if ($LastExitCode -eq 0) { Write-Host "[SUCCESS] Upgraded!" -ForegroundColor Green } 
+            else { Write-Host "[FAILED / NO UPDATE] Exit code: $LastExitCode" -ForegroundColor DarkGray }
+        }
+    }
+    Write-Host "=== Process Complete ===" -ForegroundColor Cyan
+    $Form.Close()
+})
+$Form.Controls.Add($UpgradeSelectedButton)
+
+
+# ==========================================
+# BUTTON 4: UPGRADE ALL (EVERYTHING ON PC)
+# ==========================================
+$UpgradeAllButton = New-Object System.Windows.Forms.Button
+$UpgradeAllButton.Text = "Upgrade All PC Apps"
+$UpgradeAllButton.Location = New-Object System.Drawing.Point(225, 475)
+$UpgradeAllButton.Size = New-Object System.Drawing.Size(190, 35)
+$UpgradeAllButton.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
+$UpgradeAllButton.BackColor = [System.Drawing.Color]::MediumPurple
+$UpgradeAllButton.ForeColor = [System.Drawing.Color]::White
+$UpgradeAllButton.Add_Click({
+    $Form.Hide()
+    Write-Host "`n=== Upgrading EVERY App on your PC ===" -ForegroundColor Cyan
+    Write-Host "Winget is searching for available updates..." -ForegroundColor Yellow
+    
+    # This command upgrades all apps on your PC regardless of your checkboxes
+    & winget upgrade --all --silent --accept-package-agreements --accept-source-agreements --include-unknown
+    
+    Write-Host "`n=== Upgrade Process Complete ===" -ForegroundColor Cyan
+    $Form.Close()
+})
+$Form.Controls.Add($UpgradeAllButton)
+
+
+# ==========================================
+# CANCEL BUTTON
+# ==========================================
 $CancelButton = New-Object System.Windows.Forms.Button
-$CancelButton.Text = "Cancel"
-$CancelButton.Location = New-Object System.Drawing.Point(260, 450)
-$CancelButton.Size = New-Object System.Drawing.Size(150, 35)
+$CancelButton.Text = "Cancel / Exit"
+$CancelButton.Location = New-Object System.Drawing.Point(130, 520) # Centered
+$CancelButton.Size = New-Object System.Drawing.Size(190, 35)
+$CancelButton.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
+$CancelButton.BackColor = [System.Drawing.Color]::DimGray
+$CancelButton.ForeColor = [System.Drawing.Color]::White
 $CancelButton.Add_Click({
     $Form.Close()
 })
