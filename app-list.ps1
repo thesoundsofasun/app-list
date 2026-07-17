@@ -15,7 +15,7 @@ Write-Host "Scan complete! Opening User Interface..." -ForegroundColor Green
 # 1. Define your list of applications here
 $AppList = @(
     [pscustomobject]@{ Category = "Archivator"; Name = "NanaZip"; Id = "M2Team.NanaZip" }
-    [pscustomobject]@{ Category = "Audio Redactors/DAW"; Name = "VCV Rack"; Id = "VCVRack.VCVRack" }
+    [pscustomobject]@{ Category = "Audio Redactors"; Name = "VCV Rack"; Id = "VCVRack.VCVRack" }
     [pscustomobject]@{ Category = "Browser"; Name = "Mozilla Firefox"; Id = "Mozilla.Firefox" }
     [pscustomobject]@{ Category = "Graphic Redactors"; Name = "Affinity Studio"; Id = "Canva.Affinity" }
     [pscustomobject]@{ Category = "Graphic Redactors"; Name = "GIMP"; Id = "GIMP.GIMP.3" }
@@ -42,121 +42,128 @@ foreach ($App in $AppList) {
 
 # --- DARK MODE COLORS & STYLES ---
 $BgColor      = [System.Drawing.Color]::FromArgb(32, 32, 32)   
-$TreeBgColor  = [System.Drawing.Color]::FromArgb(45, 45, 48)   
+$CardBgColor  = [System.Drawing.Color]::FromArgb(45, 45, 48)   
 $TextColor    = [System.Drawing.Color]::White
 $NeutralBtn   = [System.Drawing.Color]::FromArgb(70, 70, 70)
 $AnchorAll    = [System.Windows.Forms.AnchorStyles]::Top -bor [System.Windows.Forms.AnchorStyles]::Bottom -bor [System.Windows.Forms.AnchorStyles]::Left -bor [System.Windows.Forms.AnchorStyles]::Right
 $AnchorBottom = [System.Windows.Forms.AnchorStyles]::Bottom -bor [System.Windows.Forms.AnchorStyles]::Left
 
-# 2. Setup the GUI Window (Now Resizable!)
+# 2. Setup the GUI Window (Wider layout for columns)
 $Form = New-Object System.Windows.Forms.Form
 $Form.Text = "Advanced Package Manager Utility"
-$Form.Size = New-Object System.Drawing.Size(560, 750) 
-$Form.MinimumSize = New-Object System.Drawing.Size(560, 600) # Prevents making it too small
+$Form.ClientSize = New-Object System.Drawing.Size(850, 700) # ClientSize maps exactly to the inner space
+$Form.MinimumSize = New-Object System.Drawing.Size(600, 600)
 $Form.StartPosition = "CenterScreen"
-$Form.FormBorderStyle = 'Sizable' # Allows resizing!
+$Form.FormBorderStyle = 'Sizable' 
 $Form.Font = New-Object System.Drawing.Font("Segoe UI", 10)
 $Form.BackColor = $BgColor     
 $Form.ForeColor = $TextColor   
 
 $Label = New-Object System.Windows.Forms.Label
-$Label.Text = "Select applications to manage (Expand categories):"
-$Label.Location = New-Object System.Drawing.Point(20, 15)
+$Label.Text = "Select applications to manage (Responsive Grid Layout):"
+$Label.Location = New-Object System.Drawing.Point(20, 10)
 $Label.Size = New-Object System.Drawing.Size(400, 25)
 $Form.Controls.Add($Label)
 
 # ==========================================
-# CATEGORY TREE VIEW (REPLACES CHECKLIST)
+# RESPONSIVE GRID LAYOUT FOR CATEGORIES
 # ==========================================
-$TreeView = New-Object System.Windows.Forms.TreeView
-$TreeView.Location = New-Object System.Drawing.Point(20, 45)
-$TreeView.Size = New-Object System.Drawing.Size(500, 410)
-$TreeView.Anchor = $AnchorAll # Stretches dynamically
-$TreeView.CheckBoxes = $true
-$TreeView.BackColor = $TreeBgColor
-$TreeView.ForeColor = $TextColor
-$TreeView.ItemHeight = 24
-$TreeView.ShowLines = $false
+$FlowPanel = New-Object System.Windows.Forms.FlowLayoutPanel
+$FlowPanel.Location = New-Object System.Drawing.Point(20, 40)
+$FlowPanel.Size = New-Object System.Drawing.Size(810, 465)
+$FlowPanel.Anchor = $AnchorAll
+$FlowPanel.AutoScroll = $true
+$FlowPanel.WrapContents = $true
+$FlowPanel.FlowDirection = 'LeftToRight'
+$Form.Controls.Add($FlowPanel)
 
-# Populate Categories and Apps
+$script:AppCheckboxes = @() # Array to hold all checkbox objects
+
 $Categories = $AppList | Select-Object -ExpandProperty Category -Unique | Sort-Object
 foreach ($Cat in $Categories) {
-    $CatNode = $TreeView.Nodes.Add($Cat, "📂 " + $Cat)
-    $CatNode.ForeColor = [System.Drawing.Color]::Cyan # Stand out header color
     
+    # Create the Category Box (Card)
+    $GroupBox = New-Object System.Windows.Forms.GroupBox
+    $GroupBox.Text = "📂 $Cat"
+    $GroupBox.ForeColor = [System.Drawing.Color]::Cyan
+    $GroupBox.Width = 250
+    $GroupBox.AutoSize = $true
+    $GroupBox.MinimumSize = New-Object System.Drawing.Size(250, 50)
+    $GroupBox.Margin = New-Object System.Windows.Forms.Padding(5, 5, 10, 10)
+
+    # Inner layout for the apps inside the category
+    $InnerFlow = New-Object System.Windows.Forms.FlowLayoutPanel
+    $InnerFlow.FlowDirection = 'TopDown'
+    $InnerFlow.AutoSize = $true
+    $InnerFlow.WrapContents = $false
+    $InnerFlow.Dock = 'Fill'
+    $InnerFlow.Padding = New-Object System.Windows.Forms.Padding(5, 10, 5, 5)
+
+    # Add a "Select All" button for just this category
+    $SelectAllChk = New-Object System.Windows.Forms.CheckBox
+    $SelectAllChk.Text = "Select All in Category"
+    $SelectAllChk.ForeColor = [System.Drawing.Color]::Gold
+    $SelectAllChk.AutoSize = $true
+    $SelectAllChk.Font = New-Object System.Drawing.Font("Segoe UI", 9, [System.Drawing.FontStyle]::Italic)
+    $InnerFlow.Controls.Add($SelectAllChk)
+    
+    # Logic to select all children in this specific box
+    $SelectAllChk.Add_Click({
+        $Sender = $this
+        $ParentFlow = $Sender.Parent
+        foreach ($Ctrl in $ParentFlow.Controls) {
+            if ($Ctrl -is [System.Windows.Forms.CheckBox] -and $Ctrl -ne $Sender) {
+                $Ctrl.Checked = $Sender.Checked
+            }
+        }
+    })
+
+    # Add the apps
     $AppsInCat = $AppList | Where-Object Category -eq $Cat | Sort-Object Name
     foreach ($App in $AppsInCat) {
+        $Chk = New-Object System.Windows.Forms.CheckBox
         if ($App.HasUpdate) {
-            $Prefix = "⬆️ "
-            $Suffix = " (Update Available)"
-            $Color = [System.Drawing.Color]::LightGreen
+            $Chk.Text = "⬆️ " + $App.Name
+            $Chk.ForeColor = [System.Drawing.Color]::LightGreen
         } elseif ($App.IsInstalled) {
-            $Prefix = "✅ "
-            $Suffix = ""
-            $Color = [System.Drawing.Color]::White
+            $Chk.Text = "✅ " + $App.Name
+            $Chk.ForeColor = [System.Drawing.Color]::White
         } else {
-            $Prefix = "❌ "
-            $Suffix = ""
-            $Color = [System.Drawing.Color]::Silver
+            $Chk.Text = "❌ " + $App.Name
+            $Chk.ForeColor = [System.Drawing.Color]::Silver
         }
+        $Chk.Tag = $App
+        $Chk.AutoSize = $true
+        $Chk.Margin = New-Object System.Windows.Forms.Padding(3, 3, 3, 3)
         
-        $ChildNode = $CatNode.Nodes.Add($App.Id, "$Prefix$($App.Name)$Suffix")
-        $ChildNode.Tag = $App # Store object data inside the node
-        $ChildNode.ForeColor = $Color
+        $InnerFlow.Controls.Add($Chk)
+        $script:AppCheckboxes += $Chk
     }
-    $CatNode.Expand() # Expand categories by default
+
+    $GroupBox.Controls.Add($InnerFlow)
+    $FlowPanel.Controls.Add($GroupBox)
 }
-$Form.Controls.Add($TreeView)
 
-# Smart Checkbox Logic (Checking a folder checks all apps inside it)
-$script:HandlingCheck = $false
-$TreeView.add_AfterCheck({
-    if ($script:HandlingCheck) { return }
-    $script:HandlingCheck = $true
-    
-    $Node = $_.Node
-    if ($Node.Nodes.Count -gt 0) {
-        # Parent clicked: Check/Uncheck all children
-        foreach ($Child in $Node.Nodes) { $Child.Checked = $Node.Checked }
-    } else {
-        # Child clicked: Check/Uncheck parent folder automatically
-        $Parent = $Node.Parent
-        if ($Parent) {
-            $allChecked = $true
-            foreach ($Child in $Parent.Nodes) { if (-not $Child.Checked) { $allChecked = $false; break } }
-            $Parent.Checked = $allChecked
-        }
-    }
-    $script:HandlingCheck = $false
-})
 
-# Helper function to get exactly what is checked
+# ==========================================
+# HELPER FUNCTIONS
+# ==========================================
 function Get-SelectedApps {
     $Selected = @()
-    foreach ($CatNode in $TreeView.Nodes) {
-        foreach ($AppNode in $CatNode.Nodes) {
-            if ($AppNode.Checked) { $Selected += $AppNode.Tag }
-        }
+    foreach ($Chk in $script:AppCheckboxes) {
+        if ($Chk.Checked) { $Selected += $Chk.Tag }
     }
     return $Selected
 }
 
-# Helper function for the Auto-Select row
-function Select-Nodes ($Condition) {
-    $script:HandlingCheck = $true
-    foreach ($CatNode in $TreeView.Nodes) {
-        $allChildrenChecked = $true
-        foreach ($AppNode in $CatNode.Nodes) {
-            $App = $AppNode.Tag
-            if ($Condition -eq "None") { $AppNode.Checked = $false } 
-            elseif ($Condition -eq "Missing") { $AppNode.Checked = -not $App.IsInstalled } 
-            elseif ($Condition -eq "Installed") { $AppNode.Checked = $App.IsInstalled } 
-            elseif ($Condition -eq "Updates") { $AppNode.Checked = $App.HasUpdate }
-            if (-not $AppNode.Checked) { $allChildrenChecked = $false }
-        }
-        if ($CatNode.Nodes.Count -gt 0) { $CatNode.Checked = $allChildrenChecked }
+function Select-GlobalNodes ($Condition) {
+    foreach ($Chk in $script:AppCheckboxes) {
+        $App = $Chk.Tag
+        if ($Condition -eq "None") { $Chk.Checked = $false } 
+        elseif ($Condition -eq "Missing") { $Chk.Checked = -not $App.IsInstalled } 
+        elseif ($Condition -eq "Installed") { $Chk.Checked = $App.IsInstalled } 
+        elseif ($Condition -eq "Updates") { $Chk.Checked = $App.HasUpdate }
     }
-    $script:HandlingCheck = $false
 }
 
 
@@ -165,42 +172,42 @@ function Select-Nodes ($Condition) {
 # ==========================================
 $BtnSelectMissing = New-Object System.Windows.Forms.Button
 $BtnSelectMissing.Text = "Select Missing"
-$BtnSelectMissing.Location = New-Object System.Drawing.Point(20, 470)
-$BtnSelectMissing.Size = New-Object System.Drawing.Size(120, 30)
+$BtnSelectMissing.Location = New-Object System.Drawing.Point(20, 520)
+$BtnSelectMissing.Size = New-Object System.Drawing.Size(195, 30)
 $BtnSelectMissing.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $BtnSelectMissing.BackColor = $NeutralBtn
 $BtnSelectMissing.Anchor = $AnchorBottom
-$BtnSelectMissing.Add_Click({ Select-Nodes "Missing" })
+$BtnSelectMissing.Add_Click({ Select-GlobalNodes "Missing" })
 $Form.Controls.Add($BtnSelectMissing)
 
 $BtnSelectInstalled = New-Object System.Windows.Forms.Button
 $BtnSelectInstalled.Text = "Select Installed"
-$BtnSelectInstalled.Location = New-Object System.Drawing.Point(146, 470)
-$BtnSelectInstalled.Size = New-Object System.Drawing.Size(120, 30)
+$BtnSelectInstalled.Location = New-Object System.Drawing.Point(225, 520)
+$BtnSelectInstalled.Size = New-Object System.Drawing.Size(195, 30)
 $BtnSelectInstalled.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $BtnSelectInstalled.BackColor = $NeutralBtn
 $BtnSelectInstalled.Anchor = $AnchorBottom
-$BtnSelectInstalled.Add_Click({ Select-Nodes "Installed" })
+$BtnSelectInstalled.Add_Click({ Select-GlobalNodes "Installed" })
 $Form.Controls.Add($BtnSelectInstalled)
 
 $BtnSelectUpdates = New-Object System.Windows.Forms.Button
 $BtnSelectUpdates.Text = "Select Updates"
-$BtnSelectUpdates.Location = New-Object System.Drawing.Point(272, 470)
-$BtnSelectUpdates.Size = New-Object System.Drawing.Size(120, 30)
+$BtnSelectUpdates.Location = New-Object System.Drawing.Point(430, 520)
+$BtnSelectUpdates.Size = New-Object System.Drawing.Size(195, 30)
 $BtnSelectUpdates.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $BtnSelectUpdates.BackColor = $NeutralBtn
 $BtnSelectUpdates.Anchor = $AnchorBottom
-$BtnSelectUpdates.Add_Click({ Select-Nodes "Updates" })
+$BtnSelectUpdates.Add_Click({ Select-GlobalNodes "Updates" })
 $Form.Controls.Add($BtnSelectUpdates)
 
 $BtnClearAll = New-Object System.Windows.Forms.Button
 $BtnClearAll.Text = "Clear All"
-$BtnClearAll.Location = New-Object System.Drawing.Point(398, 470)
-$BtnClearAll.Size = New-Object System.Drawing.Size(122, 30)
+$BtnClearAll.Location = New-Object System.Drawing.Point(635, 520)
+$BtnClearAll.Size = New-Object System.Drawing.Size(195, 30)
 $BtnClearAll.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $BtnClearAll.BackColor = $NeutralBtn
 $BtnClearAll.Anchor = $AnchorBottom
-$BtnClearAll.Add_Click({ Select-Nodes "None" })
+$BtnClearAll.Add_Click({ Select-GlobalNodes "None" })
 $Form.Controls.Add($BtnClearAll)
 
 
@@ -209,8 +216,8 @@ $Form.Controls.Add($BtnClearAll)
 # ==========================================
 $InstallButton = New-Object System.Windows.Forms.Button
 $InstallButton.Text = "Install Selected"
-$InstallButton.Location = New-Object System.Drawing.Point(20, 515)
-$InstallButton.Size = New-Object System.Drawing.Size(245, 35)
+$InstallButton.Location = New-Object System.Drawing.Point(20, 560)
+$InstallButton.Size = New-Object System.Drawing.Size(400, 35)
 $InstallButton.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $InstallButton.BackColor = [System.Drawing.Color]::SeaGreen
 $InstallButton.Anchor = $AnchorBottom
@@ -230,8 +237,8 @@ $Form.Controls.Add($InstallButton)
 
 $UninstallButton = New-Object System.Windows.Forms.Button
 $UninstallButton.Text = "Uninstall Selected"
-$UninstallButton.Location = New-Object System.Drawing.Point(275, 515)
-$UninstallButton.Size = New-Object System.Drawing.Size(245, 35)
+$UninstallButton.Location = New-Object System.Drawing.Point(430, 560)
+$UninstallButton.Size = New-Object System.Drawing.Size(400, 35)
 $UninstallButton.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $UninstallButton.BackColor = [System.Drawing.Color]::IndianRed
 $UninstallButton.Anchor = $AnchorBottom
@@ -255,8 +262,8 @@ $Form.Controls.Add($UninstallButton)
 # ==========================================
 $UpgradeSelectedButton = New-Object System.Windows.Forms.Button
 $UpgradeSelectedButton.Text = "Upgrade Selected"
-$UpgradeSelectedButton.Location = New-Object System.Drawing.Point(20, 560)
-$UpgradeSelectedButton.Size = New-Object System.Drawing.Size(245, 35)
+$UpgradeSelectedButton.Location = New-Object System.Drawing.Point(20, 600)
+$UpgradeSelectedButton.Size = New-Object System.Drawing.Size(400, 35)
 $UpgradeSelectedButton.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $UpgradeSelectedButton.BackColor = [System.Drawing.Color]::SteelBlue
 $UpgradeSelectedButton.Anchor = $AnchorBottom
@@ -277,8 +284,8 @@ $Form.Controls.Add($UpgradeSelectedButton)
 
 $UpgradeAllButton = New-Object System.Windows.Forms.Button
 $UpgradeAllButton.Text = "Upgrade ALL PC Apps"
-$UpgradeAllButton.Location = New-Object System.Drawing.Point(275, 560)
-$UpgradeAllButton.Size = New-Object System.Drawing.Size(245, 35)
+$UpgradeAllButton.Location = New-Object System.Drawing.Point(430, 600)
+$UpgradeAllButton.Size = New-Object System.Drawing.Size(400, 35)
 $UpgradeAllButton.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $UpgradeAllButton.BackColor = [System.Drawing.Color]::MediumPurple
 $UpgradeAllButton.Anchor = $AnchorBottom
@@ -297,8 +304,8 @@ $Form.Controls.Add($UpgradeAllButton)
 # ==========================================
 $ListAppsButton = New-Object System.Windows.Forms.Button
 $ListAppsButton.Text = "List Installed Apps"
-$ListAppsButton.Location = New-Object System.Drawing.Point(20, 605)
-$ListAppsButton.Size = New-Object System.Drawing.Size(245, 35)
+$ListAppsButton.Location = New-Object System.Drawing.Point(20, 640)
+$ListAppsButton.Size = New-Object System.Drawing.Size(400, 35)
 $ListAppsButton.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $ListAppsButton.BackColor = [System.Drawing.Color]::Teal
 $ListAppsButton.Anchor = $AnchorBottom
@@ -314,7 +321,7 @@ $ListAppsButton.Add_Click({
     $TextBox.Multiline = $true
     $TextBox.Dock = [System.Windows.Forms.DockStyle]::Fill
     $TextBox.ScrollBars = [System.Windows.Forms.ScrollBars]::Both
-    $TextBox.BackColor = $TreeBgColor
+    $TextBox.BackColor = $CardBgColor
     $TextBox.ForeColor = $TextColor
     $TextBox.ReadOnly = $true
     $TextBox.WordWrap = $false
@@ -328,8 +335,8 @@ $Form.Controls.Add($ListAppsButton)
 
 $CancelButton = New-Object System.Windows.Forms.Button
 $CancelButton.Text = "Cancel / Exit"
-$CancelButton.Location = New-Object System.Drawing.Point(275, 605)
-$CancelButton.Size = New-Object System.Drawing.Size(245, 35)
+$CancelButton.Location = New-Object System.Drawing.Point(430, 640)
+$CancelButton.Size = New-Object System.Drawing.Size(400, 35)
 $CancelButton.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $CancelButton.BackColor = [System.Drawing.Color]::DimGray
 $CancelButton.Anchor = $AnchorBottom
