@@ -37,8 +37,8 @@ $Form.StartPosition = "CenterScreen"
 $Form.FormBorderStyle = 'FixedDialog'
 $Form.MaximizeBox = $false
 $Form.Font = New-Object System.Drawing.Font("Segoe UI", 10)
-$Form.BackColor = $BgColor     # Apply Dark Mode
-$Form.ForeColor = $TextColor   # Apply Dark Mode
+$Form.BackColor = $BgColor     
+$Form.ForeColor = $TextColor   
 
 # Add Title Label
 $Label = New-Object System.Windows.Forms.Label
@@ -52,8 +52,8 @@ $CheckedListBox = New-Object System.Windows.Forms.CheckedListBox
 $CheckedListBox.Location = New-Object System.Drawing.Point(20, 50)
 $CheckedListBox.Size = New-Object System.Drawing.Size(395, 370)
 $CheckedListBox.CheckOnClick = $true
-$CheckedListBox.BackColor = $ListBgColor   # Apply Dark Mode
-$CheckedListBox.ForeColor = $TextColor     # Apply Dark Mode
+$CheckedListBox.BackColor = $ListBgColor   
+$CheckedListBox.ForeColor = $TextColor     
 $CheckedListBox.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
 
 # Populate the list box
@@ -165,10 +165,7 @@ $UpgradeAllButton.Add_Click({
     $Form.Hide()
     Write-Host "`n=== Upgrading EVERY App on your PC ===" -ForegroundColor Cyan
     Write-Host "Winget is searching for available updates..." -ForegroundColor Yellow
-    
-    # This command upgrades all apps on your PC regardless of your checkboxes
     & winget upgrade --all --silent --accept-package-agreements --accept-source-agreements --include-unknown
-    
     Write-Host "`n=== Upgrade Process Complete ===" -ForegroundColor Cyan
     $Form.Close()
 })
@@ -176,11 +173,61 @@ $Form.Controls.Add($UpgradeAllButton)
 
 
 # ==========================================
-# CANCEL BUTTON
+# BUTTON 5: LIST INSTALLED APPS (NEW)
+# ==========================================
+$ListAppsButton = New-Object System.Windows.Forms.Button
+$ListAppsButton.Text = "List Installed Apps"
+$ListAppsButton.Location = New-Object System.Drawing.Point(20, 520)
+$ListAppsButton.Size = New-Object System.Drawing.Size(190, 35)
+$ListAppsButton.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
+$ListAppsButton.BackColor = [System.Drawing.Color]::Teal
+$ListAppsButton.ForeColor = [System.Drawing.Color]::White
+$ListAppsButton.Add_Click({
+    
+    # Temporarily change button text so the user knows it is loading
+    $ListAppsButton.Text = "Loading List..."
+    $Form.Refresh()
+    
+    # Grab the list from Winget
+    $InstalledApps = & winget list --accept-source-agreements
+    
+    # Change button text back
+    $ListAppsButton.Text = "List Installed Apps"
+
+    # Create a new Popup Window to display the results
+    $ListForm = New-Object System.Windows.Forms.Form
+    $ListForm.Text = "Currently Installed Applications (Winget)"
+    $ListForm.Size = New-Object System.Drawing.Size(850, 500)
+    $ListForm.StartPosition = "CenterParent"
+    $ListForm.BackColor = $BgColor
+    $ListForm.ForeColor = $TextColor
+
+    # Add a Text Box to hold the list
+    $TextBox = New-Object System.Windows.Forms.TextBox
+    $TextBox.Multiline = $true
+    $TextBox.Dock = [System.Windows.Forms.DockStyle]::Fill
+    $TextBox.ScrollBars = [System.Windows.Forms.ScrollBars]::Both
+    $TextBox.BackColor = $ListBgColor
+    $TextBox.ForeColor = $TextColor
+    $TextBox.ReadOnly = $true
+    $TextBox.WordWrap = $false
+    
+    # We use a Monospace font so the columns line up perfectly
+    $TextBox.Font = New-Object System.Drawing.Font("Consolas", 10) 
+    $TextBox.Text = $InstalledApps -join "`r`n"
+    
+    $ListForm.Controls.Add($TextBox)
+    $ListForm.ShowDialog() | Out-Null
+})
+$Form.Controls.Add($ListAppsButton)
+
+
+# ==========================================
+# BUTTON 6: CANCEL / EXIT
 # ==========================================
 $CancelButton = New-Object System.Windows.Forms.Button
 $CancelButton.Text = "Cancel / Exit"
-$CancelButton.Location = New-Object System.Drawing.Point(130, 520) # Centered
+$CancelButton.Location = New-Object System.Drawing.Point(225, 520)
 $CancelButton.Size = New-Object System.Drawing.Size(190, 35)
 $CancelButton.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $CancelButton.BackColor = [System.Drawing.Color]::DimGray
