@@ -5,25 +5,42 @@ Add-Type -AssemblyName System.Drawing
 # 1. Define your list of applications here!
 # You can find IDs by opening powershell and typing: winget search "App Name"
 $AppList = @(
-    [pscustomobject]@{ Category = "Browsers"; Name = "Google Chrome"; Id = "Google.Chrome" }
-    [pscustomobject]@{ Category = "Browsers"; Name = "Brave Browser"; Id = "Brave.Brave" }
-    [pscustomobject]@{ Category = "Browsers"; Name = "Mozilla Firefox"; Id = "Mozilla.Firefox" }
+    [pscustomobject]@{ Category = "Archivator"; Name = "NanaZip"; Id = "M2Team.NanaZip" }
+
+    [pscustomobject]@{ Category = "Audio Redactors/DAW"; Name = "VCV Rack"; Id = "VCVRack.VCVRack" }
+            
+    [pscustomobject]@{ Category = "Browser"; Name = "Mozilla Firefox"; Id = "Mozilla.Firefox" }
     
-    [pscustomobject]@{ Category = "Utilities"; Name = "7-Zip"; Id = "7zip.7zip" }
-    [pscustomobject]@{ Category = "Utilities"; Name = "Notepad++"; Id = "Notepad++.Notepad++" }
-    [pscustomobject]@{ Category = "Utilities"; Name = "VLC Media Player"; Id = "VideoLAN.VLC" }
+    [pscustomobject]@{ Category = "Graphic Redactors"; Name = "Affinity Studio"; Id = "Canva.Affinity" }
+    [pscustomobject]@{ Category = "Graphic Redactors"; Name = "GIMP"; Id = "GIMP.GIMP.3" }
     
-    [pscustomobject]@{ Category = "Development"; Name = "Visual Studio Code"; Id = "Microsoft.VisualStudioCode" }
+    [pscustomobject]@{ Category = "3D Redactors"; Name = "Blender"; Id = "Microsoft.VisualStudioCode" }
+    
     [pscustomobject]@{ Category = "Development"; Name = "Git"; Id = "Git.Git" }
     [pscustomobject]@{ Category = "Development"; Name = "Python 3"; Id = "Python.Python.3.11" }
 
-    [pscustomobject]@{ Category = "Communication"; Name = "Discord"; Id = "Discord.Discord" }
-    [pscustomobject]@{ Category = "Communication"; Name = "Zoom"; Id = "Zoom.Zoom" }
+    [pscustomobject]@{ Category = "Multimedia"; Name = "qView"; Id = "jurplel.qView" }
+    
+    [pscustomobject]@{ Category = "Office Suite"; Name = "OnlyOffice"; Id = "ONLYOFFICE.DesktopEditors" }
+
+    [pscustomobject]@{ Category = "Screen Capture"; Name = "OBS Studio"; Id = "OBSProject.OBSStudio" }
+
+    [pscustomobject]@{ Category = "Text Editor"; Name = "Sublime Text"; Id = "SublimeHQ.SublimeText.4" }
+
+    [pscustomobject]@{ Category = "Utilities"; Name = "BleachBit"; Id = "BleachBit.BleachBit" }
+    [pscustomobject]@{ Category = "Utilities"; Name = "Everything"; Id = "voidtools.Everything" }
+    [pscustomobject]@{ Category = "Utilities"; Name = "KeePassXC"; Id = "KeePassXCTeam.KeePassXC" }
+    [pscustomobject]@{ Category = "Utilities"; Name = "Local Send"; Id = "LocalSend.LocalSend" }
+    [pscustomobject]@{ Category = "Utilities"; Name = "MSI Afterburner"; Id = "Guru3D.Afterburner" }
+    [pscustomobject]@{ Category = "Utilities"; Name = "qBittorrent"; Id = "qBittorrent.qBittorrent" }
+
+
+
 )
 
 # 2. Setup the GUI Window
 $Form = New-Object System.Windows.Forms.Form
-$Form.Text = "My Custom Windows Setup Utility"
+$Form.Text = "App List"
 $Form.Size = New-Object System.Drawing.Size(450, 550)
 $Form.StartPosition = "CenterScreen"
 $Form.FormBorderStyle = 'FixedDialog'
