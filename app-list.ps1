@@ -22,6 +22,7 @@ $AppList = @(
     [pscustomobject]@{ Category = "3D Redactors"; Name = "Blender"; Id = "BlenderFoundation.Blender"; Type = "Winget" }
     [pscustomobject]@{ Category = "Development"; Name = "Git"; Id = "Git.Git"; Type = "Winget" }
     [pscustomobject]@{ Category = "Development"; Name = "Python 3"; Id = "Python.Python.3.11"; Type = "Winget" }
+    [pscustomobject]@{ Category = "Multimedia"; Name = "Mp3tag"; Id = "FlorianHeidenreich.Mp3tag"; Type = "Winget" }
     [pscustomobject]@{ Category = "Multimedia"; Name = "qView"; Id = "jurplel.qView"; Type = "Winget" }
     [pscustomobject]@{ Category = "Office Suite"; Name = "OnlyOffice"; Id = "ONLYOFFICE.DesktopEditors"; Type = "Winget" }
     [pscustomobject]@{ Category = "Screen Capture"; Name = "OBS Studio"; Id = "OBSProject.OBSStudio"; Type = "Winget" }
@@ -291,16 +292,16 @@ set "TARGET_DIR=C:\Users\aehaze\AppData\Local\Rack2\plugins-win-x64"
 set "OUTPUT_FILE=%TARGET_DIR%\Airwin2Rack_Update.vcvplugin"
 
 :: GitHub URL to scrape the absolute latest nightly/latest release download link
-set "URL=https://github.com"
+set "URL=https://github.com/baconpaul/airwin2rack/releases/download/Nightly/Airwin2Rack-2.14.0-nightly-e4c4ca2-win-x64.vcvplugin"
 
 echo Checking and downloading the latest Airwin2Rack package...
 
 :: Download the update package directly into the VCV Rack plugins folder
-curl -L -o "%OUTPUT_FILE%" "https://github.com"
+curl -L -o "%OUTPUT_FILE%" "https://github.com/baconpaul/airwin2rack/releases/download/Nightly/Airwin2Rack-2.14.0-nightly-e4c4ca2-win-x64.vcvplugin"
 
 :: Fallback check: if the DAWPlugin tag structure shifted, pull from the absolute latest tag
 if %ERRORLEVEL% neq 0 (
-    curl -L -o "%OUTPUT_FILE%" "https://github.com"
+    curl -L -o "%OUTPUT_FILE%" "https://github.com/baconpaul/airwin2rack/releases/download/Nightly/Airwin2Rack-2.14.0-nightly-e4c4ca2-win-x64.vcvplugin"
 )
 
 if %ERRORLEVEL% equ 0 (
