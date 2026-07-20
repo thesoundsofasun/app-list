@@ -283,40 +283,64 @@ endlocal
 echo Updating Airwin2Rack...
 :: PASTE YOUR AIRWIN2RACK BATCH SCRIPT HERE:
 @echo off
-setlocal
+setlocal enabledelayedexpansion
 
-:: Set the VCV Rack 2 plugin path for your user profile
+:: Target folder where VCV Rack expects the update package
 set "TARGET_DIR=C:\Users\aehaze\AppData\Local\Rack2\plugins-win-x64"
+set "TEMP_JSON=%TEMP%\github_release.json"
 
-:: File name for the download package (using a static name so VCV Rack handles it seamlessly)
+echo Querying GitHub for the absolute latest Nightly filename...
+
+:: Fetch the release data for the Nightly tag from GitHub's API
+curl -s "https://github.com" -o "%TEMP_JSON%"
+
+:: Search the JSON data to find the dynamic "browser_download_url" matching the win-x64.vcvplugin
+set "DOWNLOAD_URL="
+for /f "tokens=*" %%I in ('findstr /I /C:"browser_download_url" "%TEMP_JSON%"') do (
+    set "LINE=%%I"
+    if not "!LINE:win-x64.vcvplugin=!"=="!LINE!" (
+        :: Extract the raw URL string out of the JSON formatting
+        for /f "tokens=2* delims=:" %%A in ("!LINE!") do (
+            set "RAW_URL=%%B"
+            set "RAW_URL=!RAW_URL:~2!"
+            set "RAW_URL=!RAW_URL:~0,-1!"
+            set "DOWNLOAD_URL=https:!RAW_URL!"
+        )
+    )
+)
+
+:: Clean up the temporary API data file
+if exist "%TEMP_JSON%" del "%TEMP_JSON%"
+
+:: If a valid URL wasn't found, stop and notify
+if "%DOWNLOAD_URL%"=="" (
+    echo.
+    echo [ERROR] Could not find the Windows download link in the Nightly release tag.
+    pause
+    exit /b
+)
+
+:: Set final destination path (VCV Rack auto-deletes this file after extracting it on boot)
 set "OUTPUT_FILE=%TARGET_DIR%\Airwin2Rack_Update.vcvplugin"
 
-:: GitHub URL to scrape the absolute latest nightly/latest release download link
-set "URL=https://github.com/baconpaul/airwin2rack/releases/download/Nightly/Airwin2Rack-2.14.0-nightly-e4c4ca2-win-x64.vcvplugin"
+echo.
+echo Found dynamic URL: %DOWNLOAD_URL%
+echo Downloading build directly into plugins folder...
 
-echo Checking and downloading the latest Airwin2Rack package...
-
-:: Download the update package directly into the VCV Rack plugins folder
-curl -L -o "%OUTPUT_FILE%" "https://github.com/baconpaul/airwin2rack/releases/download/Nightly/Airwin2Rack-2.14.0-nightly-e4c4ca2-win-x64.vcvplugin"
-
-:: Fallback check: if the DAWPlugin tag structure shifted, pull from the absolute latest tag
-if %ERRORLEVEL% neq 0 (
-    curl -L -o "%OUTPUT_FILE%" "https://github.com/baconpaul/airwin2rack/releases/download/Nightly/Airwin2Rack-2.14.0-nightly-e4c4ca2-win-x64.vcvplugin"
-)
+:: Download the fresh payload
+curl -L -o "%OUTPUT_FILE%" "%DOWNLOAD_URL%"
 
 if %ERRORLEVEL% equ 0 (
     echo.
-    echo [SUCCESS] Update package downloaded to plugins-win-x64.
-    echo Next time you launch VCV Rack 2, it will automatically install the update.
+    echo [SUCCESS] Nightly build successfully placed in plugins-win-x64!
+    echo Close VCV Rack 2 (if open) and launch it to let it apply the update.
 ) else (
     echo.
-    echo [ERROR] Download failed. Check your internet connection.
+    echo [ERROR] Download failed. Make sure your internet connection is active.
 )
 
 pause
 endlocal
-
-
 "@
             }
             
