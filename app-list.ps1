@@ -22,6 +22,7 @@ $AppList = @(
     [pscustomobject]@{ Category = "3D Redactors"; Name = "Blender"; Id = "BlenderFoundation.Blender" }
     [pscustomobject]@{ Category = "Development"; Name = "Git"; Id = "Git.Git" }
     [pscustomobject]@{ Category = "Development"; Name = "Python 3"; Id = "Python.Python.3.11" }
+    [pscustomobject]@{ Category = "Multimedia"; Name = "Mp3tag"; Id = "FlorianHeidenreich.Mp3tag" }
     [pscustomobject]@{ Category = "Multimedia"; Name = "qView"; Id = "jurplel.qView" }
     [pscustomobject]@{ Category = "Office Suite"; Name = "OnlyOffice"; Id = "ONLYOFFICE.DesktopEditors" }
     [pscustomobject]@{ Category = "Screen Capture"; Name = "OBS Studio"; Id = "OBSProject.OBSStudio" }
