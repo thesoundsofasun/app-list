@@ -22,7 +22,6 @@ $AppList = @(
     [pscustomobject]@{ Category = "3D Redactors"; Name = "Blender"; Id = "BlenderFoundation.Blender" }
     [pscustomobject]@{ Category = "Development"; Name = "Git"; Id = "Git.Git" }
     [pscustomobject]@{ Category = "Development"; Name = "Python 3"; Id = "Python.Python.3.11" }
-    [pscustomobject]@{ Category = "Multimedia"; Name = "Mp3tag"; Id = "FlorianHeidenreich.Mp3tag" }
     [pscustomobject]@{ Category = "Multimedia"; Name = "qView"; Id = "jurplel.qView" }
     [pscustomobject]@{ Category = "Office Suite"; Name = "OnlyOffice"; Id = "ONLYOFFICE.DesktopEditors" }
     [pscustomobject]@{ Category = "Screen Capture"; Name = "OBS Studio"; Id = "OBSProject.OBSStudio" }
@@ -49,10 +48,10 @@ $NeutralBtn   = [System.Drawing.Color]::FromArgb(70, 70, 70)
 $AnchorAll    = [System.Windows.Forms.AnchorStyles]::Top -bor [System.Windows.Forms.AnchorStyles]::Bottom -bor [System.Windows.Forms.AnchorStyles]::Left -bor [System.Windows.Forms.AnchorStyles]::Right
 $AnchorBottom = [System.Windows.Forms.AnchorStyles]::Bottom -bor [System.Windows.Forms.AnchorStyles]::Left
 
-# 2. Setup the GUI Window (Wider layout for columns)
+# 2. Setup the GUI Window (Slightly taller to fit the new button)
 $Form = New-Object System.Windows.Forms.Form
 $Form.Text = "Advanced Package Manager Utility"
-$Form.ClientSize = New-Object System.Drawing.Size(850, 700) # ClientSize maps exactly to the inner space
+$Form.ClientSize = New-Object System.Drawing.Size(850, 740) # Increased height
 $Form.MinimumSize = New-Object System.Drawing.Size(600, 600)
 $Form.StartPosition = "CenterScreen"
 $Form.FormBorderStyle = 'Sizable' 
@@ -83,7 +82,6 @@ $script:AppCheckboxes = @() # Array to hold all checkbox objects
 $Categories = $AppList | Select-Object -ExpandProperty Category -Unique | Sort-Object
 foreach ($Cat in $Categories) {
     
-    # Create the Category Box (Card)
     $GroupBox = New-Object System.Windows.Forms.GroupBox
     $GroupBox.Text = "📂 $Cat"
     $GroupBox.ForeColor = [System.Drawing.Color]::Cyan
@@ -92,7 +90,6 @@ foreach ($Cat in $Categories) {
     $GroupBox.MinimumSize = New-Object System.Drawing.Size(250, 50)
     $GroupBox.Margin = New-Object System.Windows.Forms.Padding(5, 5, 10, 10)
 
-    # Inner layout for the apps inside the category
     $InnerFlow = New-Object System.Windows.Forms.FlowLayoutPanel
     $InnerFlow.FlowDirection = 'TopDown'
     $InnerFlow.AutoSize = $true
@@ -100,7 +97,6 @@ foreach ($Cat in $Categories) {
     $InnerFlow.Dock = 'Fill'
     $InnerFlow.Padding = New-Object System.Windows.Forms.Padding(5, 10, 5, 5)
 
-    # Add a "Select All" button for just this category
     $SelectAllChk = New-Object System.Windows.Forms.CheckBox
     $SelectAllChk.Text = "Select All in Category"
     $SelectAllChk.ForeColor = [System.Drawing.Color]::Gold
@@ -108,7 +104,6 @@ foreach ($Cat in $Categories) {
     $SelectAllChk.Font = New-Object System.Drawing.Font("Segoe UI", 9, [System.Drawing.FontStyle]::Italic)
     $InnerFlow.Controls.Add($SelectAllChk)
     
-    # Logic to select all children in this specific box
     $SelectAllChk.Add_Click({
         $Sender = $this
         $ParentFlow = $Sender.Parent
@@ -119,7 +114,6 @@ foreach ($Cat in $Categories) {
         }
     })
 
-    # Add the apps
     $AppsInCat = $AppList | Where-Object Category -eq $Cat | Sort-Object Name
     foreach ($App in $AppsInCat) {
         $Chk = New-Object System.Windows.Forms.CheckBox
@@ -144,7 +138,6 @@ foreach ($Cat in $Categories) {
     $GroupBox.Controls.Add($InnerFlow)
     $FlowPanel.Controls.Add($GroupBox)
 }
-
 
 # ==========================================
 # HELPER FUNCTIONS
@@ -301,7 +294,7 @@ $Form.Controls.Add($UpgradeAllButton)
 
 
 # ==========================================
-# ACTION ROW 3: UTILITIES
+# ACTION ROW 3: LIST APPS & VST BATCH SCRIPT
 # ==========================================
 $ListAppsButton = New-Object System.Windows.Forms.Button
 $ListAppsButton.Text = "List Installed Apps"
@@ -334,10 +327,76 @@ $ListAppsButton.Add_Click({
 })
 $Form.Controls.Add($ListAppsButton)
 
+
+# ---> YOUR CUSTOM BATCH SCRIPT BUTTON <---
+$RunBatButton = New-Object System.Windows.Forms.Button
+$RunBatButton.Text = "Run VST Updater (.bat)"
+$RunBatButton.Location = New-Object System.Drawing.Point(430, 640)
+$RunBatButton.Size = New-Object System.Drawing.Size(400, 35)
+$RunBatButton.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
+$RunBatButton.BackColor = [System.Drawing.Color]::Chocolate
+$RunBatButton.Anchor = $AnchorBottom
+$RunBatButton.Add_Click({
+    $Form.Hide()
+    Write-Host "`n=== Running Custom Batch Script ===" -ForegroundColor Cyan
+    
+    # We define your batch script contents inside this @" "@ block
+    $BatchCode = @"
+@echo off
+echo Starting the VST Plugin Update Process...
+
+:: PASTE YOUR BATCH SCRIPT CODE EXACTLY AS IT IS BELOW THIS LINE:
+@echo off
+setlocal
+
+:: Your exact path to the binary inside the VST3 bundle
+set "TARGET_DIR=C:\Program Files\Common Files\VST3\Airwindows\Airwindows Consolidated.vst3\Contents\x86_64-win"
+set "OUTPUT_FILE=%TARGET_DIR%\Airwindows Consolidated.vst3"
+
+:: GitHub API URL for the latest raw Win64 binary
+set "URL=https://github.com"
+
+echo Updating Airwindows Consolidated...
+
+:: Ensure curl overwrites the exact binary file in your custom path
+curl -L -o "%OUTPUT_FILE%" "%URL%"
+
+if %ERRORLEVEL% equ 0 (
+    echo.
+    echo [SUCCESS] Overwrite complete. Plugin updated to the latest version.
+) else (
+    echo.
+    echo [ERROR] Update failed. Ensure your DAW is completely closed so the file isn't locked.
+)
+
+pause
+endlocal
+:: STOP PASTING BATCH SCRIPT HERE
+"@
+
+    # Create a temporary bat file, run it, and delete it!
+    $TempBatFile = Join-Path $env:TEMP "vst_updater_temp.bat"
+    $BatchCode | Set-Content -Path $TempBatFile -Encoding ASCII
+    
+    # Execute the batch file in the current console
+    & cmd.exe /c $TempBatFile
+    
+    # Clean up the file so nothing is left behind on the PC
+    Remove-Item -Path $TempBatFile -Force
+
+    Write-Host "`n=== Custom Batch Script Finished ===" -ForegroundColor Cyan
+    $Form.Close()
+})
+$Form.Controls.Add($RunBatButton)
+
+
+# ==========================================
+# ACTION ROW 4: CANCEL / EXIT
+# ==========================================
 $CancelButton = New-Object System.Windows.Forms.Button
 $CancelButton.Text = "Cancel / Exit"
-$CancelButton.Location = New-Object System.Drawing.Point(430, 640)
-$CancelButton.Size = New-Object System.Drawing.Size(400, 35)
+$CancelButton.Location = New-Object System.Drawing.Point(20, 680)
+$CancelButton.Size = New-Object System.Drawing.Size(810, 35) # Made full width
 $CancelButton.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $CancelButton.BackColor = [System.Drawing.Color]::DimGray
 $CancelButton.Anchor = $AnchorBottom
@@ -345,6 +404,7 @@ $CancelButton.Add_Click({
     $Form.Close()
 })
 $Form.Controls.Add($CancelButton)
+
 
 # Show the GUI
 [void]$Form.ShowDialog()
