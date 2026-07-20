@@ -12,32 +12,41 @@ Write-Host "2. Checking for available app updates..." -ForegroundColor Yellow
 $UpgradableAppsString = & winget upgrade --accept-source-agreements | Out-String
 Write-Host "Scan complete! Opening User Interface..." -ForegroundColor Green
 
-# 1. Define your list of applications here
+# 1. Define your list of applications here (Added "Type" property)
 $AppList = @(
-    [pscustomobject]@{ Category = "Archivator"; Name = "NanaZip"; Id = "M2Team.NanaZip" }
-    [pscustomobject]@{ Category = "Audio Redactors"; Name = "VCV Rack"; Id = "VCVRack.VCVRack" }
-    [pscustomobject]@{ Category = "Browser"; Name = "Mozilla Firefox"; Id = "Mozilla.Firefox" }
-    [pscustomobject]@{ Category = "Graphic Redactors"; Name = "Affinity Studio"; Id = "Canva.Affinity" }
-    [pscustomobject]@{ Category = "Graphic Redactors"; Name = "GIMP"; Id = "GIMP.GIMP.3" }
-    [pscustomobject]@{ Category = "3D Redactors"; Name = "Blender"; Id = "BlenderFoundation.Blender" }
-    [pscustomobject]@{ Category = "Development"; Name = "Git"; Id = "Git.Git" }
-    [pscustomobject]@{ Category = "Development"; Name = "Python 3"; Id = "Python.Python.3.11" }
-    [pscustomobject]@{ Category = "Multimedia"; Name = "qView"; Id = "jurplel.qView" }
-    [pscustomobject]@{ Category = "Office Suite"; Name = "OnlyOffice"; Id = "ONLYOFFICE.DesktopEditors" }
-    [pscustomobject]@{ Category = "Screen Capture"; Name = "OBS Studio"; Id = "OBSProject.OBSStudio" }
-    [pscustomobject]@{ Category = "Text Editor"; Name = "Sublime Text"; Id = "SublimeHQ.SublimeText.4" }
-    [pscustomobject]@{ Category = "Utilities"; Name = "BleachBit"; Id = "BleachBit.BleachBit" }
-    [pscustomobject]@{ Category = "Utilities"; Name = "Everything"; Id = "voidtools.Everything" }
-    [pscustomobject]@{ Category = "Utilities"; Name = "KeePassXC"; Id = "KeePassXCTeam.KeePassXC" }
-    [pscustomobject]@{ Category = "Utilities"; Name = "Local Send"; Id = "LocalSend.LocalSend" }
-    [pscustomobject]@{ Category = "Utilities"; Name = "MSI Afterburner"; Id = "Guru3D.Afterburner" }
-    [pscustomobject]@{ Category = "Utilities"; Name = "qBittorrent"; Id = "qBittorrent.qBittorrent" }
+    [pscustomobject]@{ Category = "Archivator"; Name = "NanaZip"; Id = "M2Team.NanaZip"; Type = "Winget" }
+    [pscustomobject]@{ Category = "Audio Redactors"; Name = "VCV Rack"; Id = "VCVRack.VCVRack"; Type = "Winget" }
+    [pscustomobject]@{ Category = "Browser"; Name = "Mozilla Firefox"; Id = "Mozilla.Firefox"; Type = "Winget" }
+    [pscustomobject]@{ Category = "Graphic Redactors"; Name = "Affinity Studio"; Id = "Canva.Affinity"; Type = "Winget" }
+    [pscustomobject]@{ Category = "Graphic Redactors"; Name = "GIMP"; Id = "GIMP.GIMP.3"; Type = "Winget" }
+    [pscustomobject]@{ Category = "3D Redactors"; Name = "Blender"; Id = "BlenderFoundation.Blender"; Type = "Winget" }
+    [pscustomobject]@{ Category = "Development"; Name = "Git"; Id = "Git.Git"; Type = "Winget" }
+    [pscustomobject]@{ Category = "Development"; Name = "Python 3"; Id = "Python.Python.3.11"; Type = "Winget" }
+    [pscustomobject]@{ Category = "Multimedia"; Name = "qView"; Id = "jurplel.qView"; Type = "Winget" }
+    [pscustomobject]@{ Category = "Office Suite"; Name = "OnlyOffice"; Id = "ONLYOFFICE.DesktopEditors"; Type = "Winget" }
+    [pscustomobject]@{ Category = "Screen Capture"; Name = "OBS Studio"; Id = "OBSProject.OBSStudio"; Type = "Winget" }
+    [pscustomobject]@{ Category = "Text Editor"; Name = "Sublime Text"; Id = "SublimeHQ.SublimeText.4"; Type = "Winget" }
+    [pscustomobject]@{ Category = "Utilities"; Name = "BleachBit"; Id = "BleachBit.BleachBit"; Type = "Winget" }
+    [pscustomobject]@{ Category = "Utilities"; Name = "Everything"; Id = "voidtools.Everything"; Type = "Winget" }
+    [pscustomobject]@{ Category = "Utilities"; Name = "KeePassXC"; Id = "KeePassXCTeam.KeePassXC"; Type = "Winget" }
+    [pscustomobject]@{ Category = "Utilities"; Name = "Local Send"; Id = "LocalSend.LocalSend"; Type = "Winget" }
+    [pscustomobject]@{ Category = "Utilities"; Name = "MSI Afterburner"; Id = "Guru3D.Afterburner"; Type = "Winget" }
+    [pscustomobject]@{ Category = "Utilities"; Name = "qBittorrent"; Id = "qBittorrent.qBittorrent"; Type = "Winget" }
+    
+    # ---> YOUR CUSTOM ENTRIES <---
+    [pscustomobject]@{ Category = "Update others"; Name = "Airwindows Consolidated"; Id = "Custom.Airwindows"; Type = "Custom" }
+    [pscustomobject]@{ Category = "Update others"; Name = "Airwin2Rack"; Id = "Custom.Airwin2Rack"; Type = "Custom" }
 )
 
-# Parse Winget Data into our AppList
+# Parse Winget Data into our AppList (Only for Winget types)
 foreach ($App in $AppList) {
-    $App | Add-Member -MemberType NoteProperty -Name "IsInstalled" -Value ($InstalledAppsString -match [regex]::Escape($App.Id))
-    $App | Add-Member -MemberType NoteProperty -Name "HasUpdate" -Value ($UpgradableAppsString -match [regex]::Escape($App.Id))
+    if ($App.Type -eq "Winget") {
+        $App | Add-Member -MemberType NoteProperty -Name "IsInstalled" -Value ($InstalledAppsString -match [regex]::Escape($App.Id))
+        $App | Add-Member -MemberType NoteProperty -Name "HasUpdate" -Value ($UpgradableAppsString -match [regex]::Escape($App.Id))
+    } else {
+        $App | Add-Member -MemberType NoteProperty -Name "IsInstalled" -Value $false
+        $App | Add-Member -MemberType NoteProperty -Name "HasUpdate" -Value $false
+    }
 }
 
 # --- DARK MODE COLORS & STYLES ---
@@ -48,10 +57,10 @@ $NeutralBtn   = [System.Drawing.Color]::FromArgb(70, 70, 70)
 $AnchorAll    = [System.Windows.Forms.AnchorStyles]::Top -bor [System.Windows.Forms.AnchorStyles]::Bottom -bor [System.Windows.Forms.AnchorStyles]::Left -bor [System.Windows.Forms.AnchorStyles]::Right
 $AnchorBottom = [System.Windows.Forms.AnchorStyles]::Bottom -bor [System.Windows.Forms.AnchorStyles]::Left
 
-# 2. Setup the GUI Window (Slightly taller to fit the new button)
+# 2. Setup the GUI Window
 $Form = New-Object System.Windows.Forms.Form
 $Form.Text = "Advanced Package Manager Utility"
-$Form.ClientSize = New-Object System.Drawing.Size(850, 740) # Increased height
+$Form.ClientSize = New-Object System.Drawing.Size(850, 740) 
 $Form.MinimumSize = New-Object System.Drawing.Size(600, 600)
 $Form.StartPosition = "CenterScreen"
 $Form.FormBorderStyle = 'Sizable' 
@@ -117,7 +126,13 @@ foreach ($Cat in $Categories) {
     $AppsInCat = $AppList | Where-Object Category -eq $Cat | Sort-Object Name
     foreach ($App in $AppsInCat) {
         $Chk = New-Object System.Windows.Forms.CheckBox
-        if ($App.HasUpdate) {
+        
+        # New Visual Logic for Custom Apps
+        if ($App.Type -eq "Custom") {
+            $Chk.Text = "⚙️ " + $App.Name
+            $Chk.ForeColor = [System.Drawing.Color]::Orange
+        }
+        elseif ($App.HasUpdate) {
             $Chk.Text = "⬆️ " + $App.Name
             $Chk.ForeColor = [System.Drawing.Color]::LightGreen
         } elseif ($App.IsInstalled) {
@@ -153,6 +168,8 @@ function Get-SelectedApps {
 function Select-GlobalNodes ($Condition) {
     foreach ($Chk in $script:AppCheckboxes) {
         $App = $Chk.Tag
+        if ($App.Type -eq "Custom") { continue } # Don't auto-select custom scripts
+
         if ($Condition -eq "None") { $Chk.Checked = $false } 
         elseif ($Condition -eq "Missing") { $Chk.Checked = -not $App.IsInstalled } 
         elseif ($Condition -eq "Installed") { $Chk.Checked = $App.IsInstalled } 
@@ -220,9 +237,104 @@ $InstallButton.Add_Click({
     $AppsToInstall = Get-SelectedApps
     Write-Host "`n=== Starting Installation ===" -ForegroundColor Cyan
     foreach ($App in $AppsToInstall) {
-        Write-Host ">>> Installing $($App.Name)..." -ForegroundColor Yellow
-        & winget install --id $App.Id --exact --silent --accept-package-agreements --accept-source-agreements
-        if ($LastExitCode -eq 0) { Write-Host "[SUCCESS] Installed!" -ForegroundColor Green } 
+        
+        # --- CUSTOM SCRIPT EXECUTION ---
+        if ($App.Type -eq "Custom") {
+            Write-Host ">>> Running custom script for $($App.Name)..." -ForegroundColor Yellow
+            
+            # Place your Batch Script contents inside this block based on the ID!
+            if ($App.Id -eq "Custom.Airwindows") {
+                $BatCode = @"
+@echo off
+echo Updating Airwindows Consolidated...
+:: PASTE YOUR AIRWINDOWS BATCH SCRIPT HERE:
+@echo off
+setlocal
+
+:: Your exact path to the binary inside the VST3 bundle
+set "TARGET_DIR=C:\Program Files\Common Files\VST3\Airwindows\Airwindows Consolidated.vst3\Contents\x86_64-win"
+set "OUTPUT_FILE=%TARGET_DIR%\Airwindows Consolidated.vst3"
+
+:: GitHub API URL for the latest raw Win64 binary
+set "URL=https://github.com"
+
+echo Updating Airwindows Consolidated...
+
+:: Ensure curl overwrites the exact binary file in your custom path
+curl -L -o "%OUTPUT_FILE%" "%URL%"
+
+if %ERRORLEVEL% equ 0 (
+    echo.
+    echo [SUCCESS] Overwrite complete. Plugin updated to the latest version.
+) else (
+    echo.
+    echo [ERROR] Update failed. Ensure your DAW is completely closed so the file isn't locked.
+)
+
+pause
+endlocal
+
+
+"@
+            } elseif ($App.Id -eq "Custom.Airwin2Rack") {
+                $BatCode = @"
+@echo off
+echo Updating Airwin2Rack...
+:: PASTE YOUR AIRWIN2RACK BATCH SCRIPT HERE:
+@echo off
+setlocal
+
+:: Set the VCV Rack 2 plugin path for your user profile
+set "TARGET_DIR=C:\Users\aehaze\AppData\Local\Rack2\plugins-win-x64"
+
+:: File name for the download package (using a static name so VCV Rack handles it seamlessly)
+set "OUTPUT_FILE=%TARGET_DIR%\Airwin2Rack_Update.vcvplugin"
+
+:: GitHub URL to scrape the absolute latest nightly/latest release download link
+set "URL=https://github.com"
+
+echo Checking and downloading the latest Airwin2Rack package...
+
+:: Download the update package directly into the VCV Rack plugins folder
+curl -L -o "%OUTPUT_FILE%" "https://github.com"
+
+:: Fallback check: if the DAWPlugin tag structure shifted, pull from the absolute latest tag
+if %ERRORLEVEL% neq 0 (
+    curl -L -o "%OUTPUT_FILE%" "https://github.com"
+)
+
+if %ERRORLEVEL% equ 0 (
+    echo.
+    echo [SUCCESS] Update package downloaded to plugins-win-x64.
+    echo Next time you launch VCV Rack 2, it will automatically install the update.
+) else (
+    echo.
+    echo [ERROR] Download failed. Check your internet connection.
+)
+
+pause
+endlocal
+
+
+"@
+            }
+            
+            # Run the temporary batch file
+            if ($BatCode) {
+                $TempBatFile = Join-Path $env:TEMP "custom_update.bat"
+                $BatCode | Set-Content -Path $TempBatFile -Encoding ASCII
+                & cmd.exe /c $TempBatFile
+                Remove-Item -Path $TempBatFile -Force
+            }
+            Write-Host "[SUCCESS] $($App.Name) script complete!" -ForegroundColor Green
+        } 
+        
+        # --- WINGET EXECUTION ---
+        else {
+            Write-Host ">>> Installing $($App.Name)..." -ForegroundColor Yellow
+            & winget install --id $App.Id --exact --silent --accept-package-agreements --accept-source-agreements
+            if ($LastExitCode -eq 0) { Write-Host "[SUCCESS] Installed!" -ForegroundColor Green } 
+        }
     }
     Write-Host "=== Process Complete ===" -ForegroundColor Cyan
     $Form.Close()
@@ -241,9 +353,13 @@ $UninstallButton.Add_Click({
     $AppsToUninstall = Get-SelectedApps
     Write-Host "`n=== Starting Uninstallation ===" -ForegroundColor Cyan
     foreach ($App in $AppsToUninstall) {
-        Write-Host ">>> Uninstalling $($App.Name)..." -ForegroundColor Yellow
-        & winget uninstall --id $App.Id --exact --silent
-        if ($LastExitCode -eq 0) { Write-Host "[SUCCESS] Uninstalled!" -ForegroundColor Green } 
+        if ($App.Type -eq "Custom") {
+            Write-Host "[SKIPPED] Cannot uninstall custom scripts through this tool yet." -ForegroundColor DarkGray
+        } else {
+            Write-Host ">>> Uninstalling $($App.Name)..." -ForegroundColor Yellow
+            & winget uninstall --id $App.Id --exact --silent
+            if ($LastExitCode -eq 0) { Write-Host "[SUCCESS] Uninstalled!" -ForegroundColor Green } 
+        }
     }
     Write-Host "=== Process Complete ===" -ForegroundColor Cyan
     $Form.Close()
@@ -262,17 +378,8 @@ $UpgradeSelectedButton.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $UpgradeSelectedButton.BackColor = [System.Drawing.Color]::SteelBlue
 $UpgradeSelectedButton.Anchor = $AnchorBottom
 $UpgradeSelectedButton.Add_Click({
-    $Form.Hide()
-    $AppsToUpgrade = Get-SelectedApps
-    Write-Host "`n=== Upgrading Selected Apps ===" -ForegroundColor Cyan
-    foreach ($App in $AppsToUpgrade) {
-        Write-Host ">>> Upgrading $($App.Name)..." -ForegroundColor Yellow
-        & winget upgrade --id $App.Id --exact --silent --accept-package-agreements --accept-source-agreements
-        if ($LastExitCode -eq 0) { Write-Host "[SUCCESS] Upgraded!" -ForegroundColor Green } 
-        else { Write-Host "[NO UPDATE FOUND / FAILED]" -ForegroundColor DarkGray }
-    }
-    Write-Host "=== Process Complete ===" -ForegroundColor Cyan
-    $Form.Close()
+    # We trigger the EXACT same logic as Install Selected for upgrades to easily run your Batch file!
+    $InstallButton.PerformClick()
 })
 $Form.Controls.Add($UpgradeSelectedButton)
 
@@ -294,7 +401,7 @@ $Form.Controls.Add($UpgradeAllButton)
 
 
 # ==========================================
-# ACTION ROW 3: LIST APPS & VST BATCH SCRIPT
+# ACTION ROW 3: UTILITIES
 # ==========================================
 $ListAppsButton = New-Object System.Windows.Forms.Button
 $ListAppsButton.Text = "List Installed Apps"
@@ -327,10 +434,8 @@ $ListAppsButton.Add_Click({
 })
 $Form.Controls.Add($ListAppsButton)
 
-
-# ---> YOUR CUSTOM BATCH SCRIPT BUTTON <---
 $RunBatButton = New-Object System.Windows.Forms.Button
-$RunBatButton.Text = "Run VST Updater (.bat)"
+$RunBatButton.Text = "Run Generic VST Updater (.bat)"
 $RunBatButton.Location = New-Object System.Drawing.Point(430, 640)
 $RunBatButton.Size = New-Object System.Drawing.Size(400, 35)
 $RunBatButton.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
@@ -338,50 +443,17 @@ $RunBatButton.BackColor = [System.Drawing.Color]::Chocolate
 $RunBatButton.Anchor = $AnchorBottom
 $RunBatButton.Add_Click({
     $Form.Hide()
-    Write-Host "`n=== Running Custom Batch Script ===" -ForegroundColor Cyan
+    Write-Host "`n=== Running Standalone Generic Batch Script ===" -ForegroundColor Cyan
     
-    # We define your batch script contents inside this @" "@ block
     $BatchCode = @"
 @echo off
-echo Starting the VST Plugin Update Process...
-
+echo Starting the Generic VST Plugin Update Process...
 :: PASTE YOUR BATCH SCRIPT CODE EXACTLY AS IT IS BELOW THIS LINE:
-@echo off
-setlocal
 
-:: Your exact path to the binary inside the VST3 bundle
-set "TARGET_DIR=C:\Program Files\Common Files\VST3\Airwindows\Airwindows Consolidated.vst3\Contents\x86_64-win"
-set "OUTPUT_FILE=%TARGET_DIR%\Airwindows Consolidated.vst3"
-
-:: GitHub API URL for the latest raw Win64 binary
-set "URL=https://github.com"
-
-echo Updating Airwindows Consolidated...
-
-:: Ensure curl overwrites the exact binary file in your custom path
-curl -L -o "%OUTPUT_FILE%" "%URL%"
-
-if %ERRORLEVEL% equ 0 (
-    echo.
-    echo [SUCCESS] Overwrite complete. Plugin updated to the latest version.
-) else (
-    echo.
-    echo [ERROR] Update failed. Ensure your DAW is completely closed so the file isn't locked.
-)
-
-pause
-endlocal
-:: STOP PASTING BATCH SCRIPT HERE
 "@
-
-    # Create a temporary bat file, run it, and delete it!
-    $TempBatFile = Join-Path $env:TEMP "vst_updater_temp.bat"
+    $TempBatFile = Join-Path $env:TEMP "generic_updater_temp.bat"
     $BatchCode | Set-Content -Path $TempBatFile -Encoding ASCII
-    
-    # Execute the batch file in the current console
     & cmd.exe /c $TempBatFile
-    
-    # Clean up the file so nothing is left behind on the PC
     Remove-Item -Path $TempBatFile -Force
 
     Write-Host "`n=== Custom Batch Script Finished ===" -ForegroundColor Cyan
@@ -396,7 +468,7 @@ $Form.Controls.Add($RunBatButton)
 $CancelButton = New-Object System.Windows.Forms.Button
 $CancelButton.Text = "Cancel / Exit"
 $CancelButton.Location = New-Object System.Drawing.Point(20, 680)
-$CancelButton.Size = New-Object System.Drawing.Size(810, 35) # Made full width
+$CancelButton.Size = New-Object System.Drawing.Size(810, 35)
 $CancelButton.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $CancelButton.BackColor = [System.Drawing.Color]::DimGray
 $CancelButton.Anchor = $AnchorBottom
